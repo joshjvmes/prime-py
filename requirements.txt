@@ -1,0 +1,5 @@
+numpy>=1.19
+vispy>=0.9
+opensimplex>=0.1.2
+pytest>=6.0       # for running tests
+pandas>=1.0.0     # optional: for from_dataframe convenience

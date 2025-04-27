@@ -1,0 +1,3 @@
+numpy>=1.19
+opensimplex>=0.1.2
+vispy>=0.9

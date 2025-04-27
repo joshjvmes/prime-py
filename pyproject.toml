@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "particle-field"
+version = "0.1.0"
+description = "Pure-Python, GPU-accelerated particle morphing library"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    { name = "Solace Aeon", email = "josh@example.com" }
+]
+dependencies = [
+    "numpy>=1.19",
+    "opensimplex>=0.1.2",
+    "vispy>=0.9",
+]

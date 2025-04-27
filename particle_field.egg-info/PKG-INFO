@@ -1,0 +1,61 @@
+Metadata-Version: 2.4
+Name: particle-field
+Version: 0.1.0
+Summary: Pure-Python, GPU-accelerated particle morphing library
+Author-email: Solace Aeon <josh@example.com>
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.19
+Requires-Dist: opensimplex>=0.1.2
+Requires-Dist: vispy>=0.9
+
+# Particle Field
+
+A pure-Python, GPU-accelerated particle morphing library using VisPy and NumPy. Inspired by a Three.js reference implementation, it supports dynamic shape morphing, noise-driven effects, and flexible color schemes.
+
+## Features
+- Multiple built-in shape generators: sphere, cube, pyramid, torus, galaxy, wave
+- Smooth morphing with swarm, swirl, and noise effects
+- HSL-based color schemes with noise perturbation: fire, neon, nature, rainbow
+- Live interactive demo via VisPy `SceneCanvas`
+- Python API: `set_shape()`, `set_color()`, `trigger_morph()`, `load_custom_points()`
+
+## Installation
+1. Create a virtual environment (recommended):
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+2. Install core dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Install the package in editable mode:
+   ```bash
+   pip install -e .
+   ```
+
+## Usage
+Run the interactive demo:
+```bash
+python3 examples/demo.py
+```
+
+### Controls
+- Space or Right Arrow: cycle to next shape and morph
+- C: cycle to next color scheme
+- Q or Esc: quit
+
+## Examples
+Embed `ParticleField` in your own scripts:
+```python
+from particle_field import ParticleField
+field = ParticleField(count=20000, size=15.0)
+field.set_shape('galaxy')
+field.set_color('rainbow')
+field.trigger_morph(3000)
+# The VisPy canvas runs its own event loop
+```
+
+## License
+This project is MIT licensed. See LICENSE.txt in the reference folder for details.

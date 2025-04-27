@@ -1,0 +1,10 @@
+/node_modules
+/.parcel-cache
+/dist
+/e2e
+/public
+/coverage
+/.nyc_output
+/perf/*.log
+/perf/*.cfg
+/perf/*.json
