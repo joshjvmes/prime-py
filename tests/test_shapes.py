@@ -8,6 +8,10 @@ from particle_field.shapes import (
     generate_torus,
     generate_galaxy,
     generate_wave,
+    generate_helix,
+    generate_lissajous,
+    generate_spiral,
+    generate_trefoil,
 )
 
 @pytest.mark.parametrize("fn,size", [
@@ -17,6 +21,10 @@ from particle_field.shapes import (
     (generate_torus, 1.0),
     (generate_galaxy, 2.5),
     (generate_wave, 2.0),
+    (generate_helix, 3.0),
+    (generate_lissajous, 2.0),
+    (generate_spiral, 4.0),
+    (generate_trefoil, 3.0),
 ])
 def test_point_generator(fn, size):
     count = 1000

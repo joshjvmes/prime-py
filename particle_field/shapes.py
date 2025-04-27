@@ -7,6 +7,10 @@ __all__ = [
     "generate_torus",
     "generate_galaxy",
     "generate_wave",
+    "generate_helix",
+    "generate_lissajous",
+    "generate_spiral",
+    "generate_trefoil",
 ]
 
 def generate_sphere(count: int, size: float) -> np.ndarray:
@@ -182,3 +186,59 @@ def generate_wave(count: int, size: float) -> np.ndarray:
         points[i, 1] = y
         points[i, 2] = z
     return points
+
+def generate_helix(count: int, size: float, turns: int = 3) -> np.ndarray:
+    """
+    Generate a 3D helix (spiral along y-axis).
+    """
+    pts = np.zeros((count, 3), dtype=np.float32)
+    radius = size * 0.4
+    height = size
+    for i in range(count):
+        t = (i / (count - 1)) * turns * 2 * np.pi
+        x = np.cos(t) * radius
+        y = (i / (count - 1) - 0.5) * height
+        z = np.sin(t) * radius
+        pts[i] = [x, y, z]
+    return pts
+
+def generate_lissajous(count: int, size: float,
+                        ax: int = 3, ay: int = 2,
+                        delta: float = np.pi / 2) -> np.ndarray:
+    """
+    Generate a 2D Lissajous curve on the z=0 plane.
+    """
+    pts = np.zeros((count, 3), dtype=np.float32)
+    for i in range(count):
+        t = (i / (count - 1)) * 2 * np.pi
+        x = np.sin(ax * t + delta)
+        y = np.sin(ay * t)
+        pts[i] = [x * size, y * size, 0.0]
+    return pts
+
+def generate_spiral(count: int, size: float, turns: int = 5) -> np.ndarray:
+    """
+    Generate a flat Archimedean spiral in the x-y plane.
+    """
+    pts = np.zeros((count, 3), dtype=np.float32)
+    for i in range(count):
+        t = (i / (count - 1)) * turns * 2 * np.pi
+        r = (i / (count - 1)) * (size * 0.5)
+        x = r * np.cos(t)
+        y = r * np.sin(t)
+        pts[i] = [x, y, 0.0]
+    return pts
+
+def generate_trefoil(count: int, size: float) -> np.ndarray:
+    """
+    Generate a trefoil knot scaled to the given size.
+    """
+    pts = np.zeros((count, 3), dtype=np.float32)
+    scale = size / 3.0
+    for i in range(count):
+        t = (i / (count - 1)) * 2 * np.pi
+        x = (2 + np.cos(3 * t)) * np.cos(2 * t)
+        y = (2 + np.cos(3 * t)) * np.sin(2 * t)
+        z = np.sin(3 * t)
+        pts[i] = [x * scale, y * scale, z * scale]
+    return pts

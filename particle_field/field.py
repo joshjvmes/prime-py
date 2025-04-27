@@ -32,6 +32,11 @@ class ParticleField:
         self.init_canvas = init_canvas
         self.count = count
         self.size = size
+        from .shapes import (
+            generate_sphere, generate_cube, generate_pyramid,
+            generate_torus, generate_galaxy, generate_wave,
+            generate_helix, generate_lissajous, generate_spiral, generate_trefoil
+        )
         self._generators = {
             "sphere": generate_sphere,
             "cube": generate_cube,
@@ -39,6 +44,10 @@ class ParticleField:
             "torus": generate_torus,
             "galaxy": generate_galaxy,
             "wave": generate_wave,
+            "helix": generate_helix,
+            "lissajous": generate_lissajous,
+            "spiral": generate_spiral,
+            "trefoil": generate_trefoil,
         }
         # initial shape and morph state
         self.current_shape = "sphere"
@@ -74,6 +83,9 @@ class ParticleField:
         self._default_swirl = self.swirl_factor
         self._default_noise = self.noise_max_strength
         self._default_color = self.current_color_scheme
+        # event listeners and morph tracking
+        self._listeners = []
+        self._was_morphing = False
         # emotion-to-parameter mapping
         self.emotion_configs = {
             'joy':        {'swirl': 6.0,  'noise': 3.0, 'color': 'rainbow'},
@@ -91,18 +103,67 @@ class ParticleField:
             # apply initial colors
             self.set_color(self.current_color_scheme)
 
+    def add_listener(self, callback):
+        """Register a listener callback for field events."""
+        self._listeners.append(callback)
+
+    def remove_listener(self, callback):
+        """Unregister a previously registered listener."""
+        self._listeners.remove(callback)
+
+    def _emit(self, event, **kwargs):
+        """Emit an event with additional data to all listeners."""
+        msg = {'event': event}
+        msg.update(kwargs)
+        for cb in list(self._listeners):
+            try:
+                cb(msg)
+            except Exception:
+                pass
+
     def _init_canvas(self):
         # Create a VisPy canvas with a turntable camera
         self.canvas = scene.SceneCanvas(title="Particle Field", keys="interactive", show=True)
         self.view = self.canvas.central_widget.add_view()
-        self.scatter = visuals.Markers()
-        self.scatter.set_data(self.positions, face_color=self.colors, size=5)
-        self.view.add(self.scatter)
         self.view.camera = 'turntable'
+        # Choose visual: CPU or GPU
+        if self.use_gpu:
+            from .morph_visual import MorphMarkersVisual
+            # Create GPU morph visual
+            self.scatter = MorphMarkersVisual(
+                source=self.source_positions,
+                swarm=self.swarm_positions,
+                target=self.target_positions,
+                colors=self.colors[:, :3],
+                sizes=np.full(self.count, 5.0, dtype=np.float32),
+                axes=np.random.normal(size=(self.count, 3)).astype(np.float32),
+            )
+            # Initialize uniforms
+            self.scatter.set_swirl(self.swirl_factor)
+            self.scatter.set_progress(0.0)
+        else:
+            # CPU fallback
+            self.scatter = visuals.Markers()
+            self.scatter.set_data(self.positions, face_color=self.colors, size=5)
+        self.view.add(self.scatter)
         # Timer for updates
         self.timer = app.Timer('auto', connect=self._on_timer, start=True)
 
     def _on_timer(self, event):
+        # GPU path: update morph uniforms and redraw
+        if self.use_gpu:
+            if self.morphing:
+                now = time.monotonic()
+                elapsed = now - self._morph_start
+                t = min(elapsed / self._morph_duration, 1.0) if self._morph_duration > 0 else 1.0
+                if t >= 1.0:
+                    self.morphing = False
+                swirl_amt = self.swirl_factor * t
+                self.scatter.set_progress(t)
+                self.scatter.set_swirl(swirl_amt)
+            # request redraw
+            self.canvas.update()
+            return
         # Called each frame; update positions/colors if morphing
         if self.morphing:
             now = time.monotonic()
