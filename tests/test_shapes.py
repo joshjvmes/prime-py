@@ -40,7 +40,9 @@ def test_sphere_radius():
     pts = generate_sphere(500, 3.0)
     r = np.linalg.norm(pts, axis=1)
     # radius should be <= size (allow small epsilon)
-    assert r.max() <= pytest.approx(3.0, rel=1e-2)
+    # radius should be within 1% of size
+    max_r = float(r.max())
+    assert max_r <= 3.0 * 1.01 + 1e-6
 
 def test_cube_bounds():
     size = 4.0

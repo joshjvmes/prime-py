@@ -28,6 +28,8 @@ class ParticleField:
         use_gpu: if True, offload morph to GPU via GLSL; else, use CPU path.
         """
         self.use_gpu = use_gpu
+        # placeholder for scatter visual (will be set if init_canvas=True)
+        self.scatter = None
         # Whether to initialize the VisPy canvas (disable for headless testing)
         self.init_canvas = init_canvas
         self.count = count
@@ -261,8 +263,12 @@ class ParticleField:
         self.current_color_scheme = scheme
         # Recompute colors for current positions
         self._update_colors()
-        # Update GPU buffer colors
-        self.scatter.set_data(self.positions, face_color=self.colors, size=5)
+        # Update GPU buffer colors (if scatter visual exists)
+        if self.scatter is not None:
+            try:
+                self.scatter.set_data(self.positions, face_color=self.colors, size=5)
+            except Exception:
+                pass
 
     def trigger_morph(self, duration_ms: int = 4000):
         """
@@ -331,7 +337,12 @@ class ParticleField:
         else:
             # instant update
             self.positions = pts_resized.copy()
-            self.scatter.set_data(self.positions, face_color=self.colors, size=5)
+            # Update scatter if available
+            if self.scatter is not None:
+                try:
+                    self.scatter.set_data(self.positions, face_color=self.colors, size=5)
+                except Exception:
+                    pass
         return
 
     def from_dataframe(self, df, x_col='x', y_col='y', z_col=None,
