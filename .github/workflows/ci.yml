@@ -1,45 +1,26 @@
 name: CI
+
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*' ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+
 jobs:
   test:
-    # Allow test failures so code can be pushed even if tests are still in flux
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.11, 3.12]
-    steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -e .
-    - run: pytest -q
-  publish:
-    name: Publish
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
-      - name: Install build tools
+          python-version: '3.x'
+      - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip build twine
-      - name: Build distributions
-        run: python -m build --sdist --wheel
-      - name: Publish to PyPI
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: python -m twine upload dist/*
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run tests
+        run: pytest -q --disable-warnings --maxfail=1

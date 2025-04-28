@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 run_all.py: Unified launcher to start WebSocket server, VisPy canvas, and AI bridge.
 Usage:
@@ -73,6 +74,13 @@ def main():
         logger.info("AI Bridge launching...")
     if not args.no_vispy:
         logger.info("Starting VisPy canvas...")
+        # Initialize VisPy canvas if not already done in server
+        try:
+            if not field.init_canvas:
+                field.init_canvas = True
+                field._init_canvas()
+        except Exception:
+            pass
         vispy_app.run()
     else:
         logger.info("VisPy disabled; main loop idle.")

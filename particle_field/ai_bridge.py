@@ -49,9 +49,17 @@ class AIFieldBridge:
         # Ask the model for a JSON command
         system = {"role": "system", "content": "You control a particle field. Respond with JSON {command, args}."}
         user = {"role": "user", "content": prompt}
-        resp = openai.ChatCompletion.create(
+        # Invoke Chat Completion, supporting both openai<1.0 (ChatCompletion) and >=1.0 (chat.completions)
+        messages = [system, user]
+        try:
+            # openai-python <1.0
+            comp = openai.ChatCompletion
+        except AttributeError:
+            # openai-python >=1.0
+            comp = openai.chat.completions
+        resp = comp.create(
             model=self.model,
-            messages=[system, user],
+            messages=messages,
             temperature=temperature,
             max_tokens=100,
         )

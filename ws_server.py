@@ -3,16 +3,22 @@ import json
 import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from particle_field import ParticleField
 from vispy import app as vispy_app
 
-# Initialize the particle field (GPU off)
-field = ParticleField(count=15000, size=10.0, use_gpu=False)
+# Initialize the particle field (GPU off), no VisPy canvas in server mode
+field = ParticleField(count=15000, size=10.0, use_gpu=False, init_canvas=False)
 
 # Create FastAPI app and mount static files
 app = FastAPI()
-app.mount("/", StaticFiles(directory="reference/dist", html=True), name="static")
+# Serve the Three.js UI under /static
+app.mount("/static", StaticFiles(directory="reference/dist"), name="static")
+# Serve index.html at the root
+@app.get("/")
+async def get_index():
+    return FileResponse("reference/dist/index.html")
 
 # Connected WebSocket clients
 clients = set()
@@ -35,6 +41,8 @@ async def websocket_endpoint(ws: WebSocket):
             if hasattr(field, cmd):
                 try:
                     getattr(field, cmd)(*args)
+                    # Acknowledge command
+                    await ws.send_text(json.dumps({"ack": cmd, "args": args}))
                 except Exception as e:
                     await ws.send_text(json.dumps({"error": str(e)}))
             else:

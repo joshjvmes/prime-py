@@ -150,6 +150,11 @@ class ParticleField:
         self.view.add(self.scatter)
         # Timer for updates
         self.timer = app.Timer('auto', connect=self._on_timer, start=True)
+        # Apply initial color scheme now that canvas and scatter exist
+        try:
+            self.set_color(self.current_color_scheme)
+        except Exception:
+            pass
 
     def _on_timer(self, event):
         # GPU path: update morph uniforms and redraw
@@ -241,9 +246,13 @@ class ParticleField:
                         )
                         p += np.array([nx, ny, nz], dtype=np.float32) * noise_amp
                     self.positions[i] = p
-            # update colors & GPU
+            # update colors and (if any) scatter visual on CPU path
             self._update_colors()
-            self.scatter.set_data(self.positions, face_color=self.colors, size=5)
+            if self.scatter is not None:
+                try:
+                    self.scatter.set_data(self.positions, face_color=self.colors, size=5)
+                except Exception:
+                    pass
 
     def set_shape(self, name: str):
         """
@@ -379,13 +388,17 @@ class ParticleField:
         self.swirl_factor = cfg['swirl'] * intensity
         self.noise_max_strength = cfg['noise'] * intensity
         self.set_color(cfg['color'])
-        # Schedule revert
-        def _revert(ev):
+        # Schedule revert (only if canvas/timer backend initialized)
+        def _revert(ev=None):
             self.swirl_factor = self._default_swirl
             self.noise_max_strength = self._default_noise
             self.set_color(self._default_color)
-        # One-shot timer to revert after duration
-        app.Timer(duration_ms / 1000.0, connect=_revert, start=True)
+        # Use VisPy timer only if canvas/timer system is active
+        if self.init_canvas:
+            try:
+                app.Timer(duration_ms / 1000.0, connect=_revert, start=True)
+            except Exception:
+                pass
     
     def _update_colors(self):
         """

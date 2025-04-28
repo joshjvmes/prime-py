@@ -27,6 +27,13 @@ A pure-Python, GPU-accelerated particle morphing library using VisPy and NumPy. 
    ```bash
    pip install PyQt6
    ```
+  5. (Optional) Vendor dependencies locally for offline use:
+     ```bash
+     chmod +x vendor_deps.sh
+     ./vendor_deps.sh
+     # Then install dependencies from the 'deps' folder:
+     pip install --no-index --find-links deps -r requirements.txt
+     ```
 
 ## Usage
 Run the interactive demo:

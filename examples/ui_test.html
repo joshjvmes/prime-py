@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ParticleField WS Test</title>
+  <style>
+    body { font-family: sans-serif; margin: 16px; }
+    #cmd { width: 100%; height: 80px; }
+    #log { width: 100%; height: 300px; overflow: auto; background: #f0f0f0; padding: 8px; white-space: pre-wrap; }
+    button { margin-top: 8px; padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <h1>ParticleField WebSocket Test</h1>
+  <textarea id="cmd">{"command":"set_shape","args":["cube"]}</textarea><br>
+  <button id="send">Send Command</button>
+  <h2>Log</h2>
+  <div id="log"></div>
+
+  <script>
+    const logEl = document.getElementById('log');
+    function append(msg) {
+      logEl.textContent += msg + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    const ws = new WebSocket('ws://localhost:8000/ws');
+    ws.addEventListener('open', () => append('[OPEN] WebSocket connection established'));
+    ws.addEventListener('message', evt => append('[RECV] ' + evt.data));
+    ws.addEventListener('close', () => append('[CLOSE] WebSocket closed'));
+    ws.addEventListener('error', err => append('[ERROR] ' + err));
+    document.getElementById('send').addEventListener('click', () => {
+      const txt = document.getElementById('cmd').value;
+      append('[SEND] ' + txt);
+      ws.send(txt);
+    });
+  </script>
+</body>
+</html>
