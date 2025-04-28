@@ -39,6 +39,51 @@ You can also start a TCP JSON controller:
 ```bash
 python3 examples/controller_demo.py
 ```
+
+## WebSocket Browser UI Integration
+For an embedded web interface (Three.js), start the FastAPI+Uvicorn server:
+```bash
+python3 ws_server.py
+# or: uvicorn ws_server:app --reload --port 8000
+```
+Then open your browser at `http://localhost:8000/` to load the Three.js UI from `reference/dist`.
+WebSocket messages (`/ws`) can be sent from browser JS or via the AI bridge.
+
+---
+Run individual components manually:
+  * Python VisPy client:
+    ```bash
+    python3 examples/demo.py
+    ```
+  * WebSocket + Static Server + Three.js UI:
+    ```bash
+    python3 ws_server.py
+    # or use: uvicorn ws_server:app --reload --port 8000
+    ```
+  * AI Bridge (requires OPENAI_API_KEY):
+    ```bash
+    python3 examples/openai_demo.py
+    ```
+---
+
+## Unified Launcher
+Use `run_all.py` to start all components in one command. Browser will open automatically:
+```bash
+# starts WebSocket server + Three.js UI, VisPy canvas, and AI bridge
+python3 run_all.py
+```
+**Note:** To enter AI prompts via console, disable the VisPy canvas:
+```bash
+python3 run_all.py --no-vispy
+```
+Disable any component with flags:
+```bash
+python3 run_all.py --no-ai        # disable AI bridge
+python3 run_all.py --no-vispy     # disable VisPy canvas (console free for AI)
+python3 run_all.py --no-web       # disable web server (Three.js UI)
+```
+Environment:
+- `OPENAI_API_KEY`: your OpenAI API key (for AI bridge)
 Then connect via `netcat`:
 ```bash
 nc localhost 8765

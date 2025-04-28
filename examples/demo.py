@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Ensure project root is on PYTHONPATH
+import os, sys
+sys.path.insert(0, os.path.abspath(os.path.join(__file__, '..', '..')))
 """
 Demo script for the ParticleField library.
 Controls:
