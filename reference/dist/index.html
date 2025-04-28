@@ -235,6 +235,10 @@
       (function(){
         function buildTestUI() {
             console.log('[UI Test] buildTestUI executed');
+            if (!window.SHAPES || !window.COLOR_SCHEMES) {
+                console.log('[UI Test] SHAPES or COLOR_SCHEMES not ready');
+                return;
+            }
             const testUI = document.getElementById('test-ui');
             if (!testUI) return;
             const divs = testUI.querySelectorAll('div');
@@ -268,9 +272,11 @@
               colorsDiv.appendChild(btn);
             });
           }
-          document.addEventListener('DOMContentLoaded', buildTestUI);
-          window.addEventListener('load', buildTestUI);
-          setTimeout(buildTestUI, 500);
+        document.addEventListener('DOMContentLoaded', buildTestUI);
+        window.addEventListener('load', buildTestUI);
+        setTimeout(buildTestUI, 500);
+        // Immediate invocation to ensure buttons appear
+        buildTestUI();
         })();
       </script>
 
@@ -908,7 +914,8 @@
         }
       })();
     </script>
-<!-- partial -->
+    <script src="/static/ui_commands.js"></script>
+    <!-- partial -->
   
 </body>
 </html>
