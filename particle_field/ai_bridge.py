@@ -47,28 +47,105 @@ class AIFieldBridge:
 
     async def ask_and_drive(self, prompt, temperature=0.7):
         # Ask the model for a JSON command
-        system = {"role": "system", "content": "You control a particle field. Respond with JSON {command, args}."}
+        # System prompt defines valid commands and JSON-only responses
+        system = {
+            "role": "system",
+            "content": (
+                "You are an AI controller for a Python GPU-accelerated particle field. "
+                "The only valid JSON commands are:\n"
+                "- set_shape(shape_name) where shape_name in [sphere, cube, pyramid, torus, galaxy, wave, helix, lissajous, spiral, trefoil]\n"
+                "- set_color(color_name) where color_name in [fire, neon, nature, rainbow]\n"
+                "- trigger_morph(duration_ms)\n"
+                "- express(emotion, intensity, duration_ms) where emotion in [joy, calm, angry, neutral, surprised, thoughtful, sad, excited]\n"
+                "When responding, output ONLY a JSON object with keys 'command' and 'args', e.g. {\"command\":\"set_shape\",\"args\":[\"cube\"]}. "
+                "Do not include any additional text or comments. If the user request cannot be mapped, respond with {\"error\":\"<reason>\"}."
+            )
+        }
         user = {"role": "user", "content": prompt}
-        # Invoke Chat Completion, supporting both openai<1.0 (ChatCompletion) and >=1.0 (chat.completions)
-        messages = [system, user]
+        # Prepare parameters
+        params = {
+            'model': self.model,
+            'messages': [system, user],
+            'temperature': temperature,
+            'max_tokens': 100,
+        }
+        # Determine which client to use (new OpenAI client vs legacy)
+        if hasattr(openai, 'OpenAI'):
+            # openai>=1.x: use the new client
+            client = openai.OpenAI()
+            chat_mod = client.chat.completions
+        else:
+            # openai<1.0: fallback to old ChatCompletion
+            if hasattr(openai, 'ChatCompletion'):
+                chat_mod = openai.ChatCompletion
+            else:
+                # fallback to module path
+                chat_mod = openai.chat.completions
+        # Perform the request, with optional streaming support
+        content = ''
+        stream = params.copy()
+        stream['stream'] = True
+        # Try async streaming
         try:
-            # openai-python <1.0
-            comp = openai.ChatCompletion
-        except AttributeError:
-            # openai-python >=1.0
-            comp = openai.chat.completions
-        resp = comp.create(
-            model=self.model,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=100,
-        )
-        content = resp.choices[0].message.content.strip()
-        try:
-            cmd = json.loads(content)
-            await self.send_command(cmd.get("command"), cmd.get("args", []))
-        except Exception as e:
-            print("Failed to parse JSON from model:", content, e)
+            if hasattr(chat_mod, 'acreate'):
+                # openai>=1.x async stream
+                async for chunk in chat_mod.acreate(**stream):
+                    delta = getattr(chunk.choices[0].delta, 'content', None)
+                    if delta:
+                        print(delta, end='', flush=True)
+                        content += delta
+            else:
+                # Legacy sync stream
+                for chunk in chat_mod.create(**stream):
+                    delta = chunk.choices[0].delta.get('content', '')
+                    print(delta, end='', flush=True)
+                    content += delta
+        except Exception:
+            # Fallback to non-streaming
+            resp = (await chat_mod.acreate(**params)) if hasattr(chat_mod, 'acreate') else chat_mod.create(**params)
+            try:
+                content = resp.choices[0].message.content
+            except AttributeError:
+                # legacy structure
+                content = resp.choices[0].text
+        # newline after streaming output
+        print()
+        # Prepare final text: prefer streamed content, else full response
+        text = content.strip()
+        if not text:
+            try:
+                text = resp.choices[0].message.content.strip()
+            except Exception:
+                # legacy field
+                text = resp.choices[0].text.strip()
+        # Parse one or more JSON objects from text
+        decoder = json.JSONDecoder()
+        idx = 0
+        s = text
+        while True:
+            s = s.lstrip()
+            if not s:
+                break
+            try:
+                obj, offset = decoder.raw_decode(s)
+            except Exception as e:
+                print("Failed to parse JSON from model:", s, e)
+                break
+            # Handle error responses without sending to server
+            if 'error' in obj:
+                print("AI returned error:", obj.get('error'))
+            else:
+                cmd = obj.get('command')
+                args = obj.get('args', [])
+                if isinstance(cmd, str):
+                    try:
+                        await self.send_command(cmd, args)
+                    except Exception as e:
+                        print(f"Failed to send command {cmd}:", e)
+                else:
+                    print("No valid command to send, skipping:", obj)
+            # Advance past the parsed object
+            s = s[offset:]
 
     async def close(self):
         await self.ws.close()

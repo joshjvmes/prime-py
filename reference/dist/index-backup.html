@@ -148,21 +148,11 @@
     <div id="controls">
         <button id="shape-btn">Change Shape</button>
 
-            <div id="color-picker">
+        <div id="color-picker">
             <div class="color-option" data-scheme="fire" style="background: linear-gradient(to bottom right, #ff4500, #ffcc00)"></div>
             <div class="color-option" data-scheme="neon" style="background: linear-gradient(to bottom right, #ff00ff, #00ffff)"></div>
             <div class="color-option" data-scheme="nature" style="background: linear-gradient(to bottom right, #00ff00, #66ffcc)"></div>
             <div class="color-option" data-scheme="rainbow" style="background: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)"></div>
-        </div>
-        <!-- Testing UI Buttons -->
-        <div id="test-ui" style="margin-top: 12px; text-align: center;">
-            <div style="margin-bottom:6px;">
-                <strong>Test Shapes:</strong>
-                <!-- Dynamically generate via script below -->
-            </div>
-            <div style="margin-bottom:6px;">
-                <strong>Test Colors:</strong>
-            </div>
         </div>
     </div>
 
@@ -181,14 +171,9 @@
     <!-- WebSocket UI command handler -->
     <script>
       (function(){
-        // Initialize WebSocket UI for commands (if available)
-        window.wsUI = null;
-        try {
-          const url = (location.protocol==='https:'?'wss':'ws') + '://' + location.host + '/ws';
-          const ws = new WebSocket(url);
-          window.wsUI = ws;
-          ws.addEventListener('open', () => console.log('[UI] WS connected'));
-          ws.addEventListener('message', evt => {
+        const wsUI = new WebSocket((location.protocol==='https:'?'wss':'ws')+'://'+location.host+'/ws');
+        wsUI.addEventListener('open', () => console.log('[UI] WS connected'));
+        wsUI.addEventListener('message', evt => {
           console.log('[UI] Received', evt.data);
           let msg;
           try { msg = JSON.parse(evt.data); } catch(err){ console.error('Invalid JSON', evt.data); return; }
@@ -229,51 +214,6 @@
           triggerMorph();
         }
       })();
-    </script>
-    <!-- Testing UI script -->
-    <script>
-      <script>
-        (function(){
-        function buildTestUI() {
-            console.log('[UI Test] buildTestUI executed');
-            const testUI = document.getElementById('test-ui');
-            if (!testUI) return;
-            const divs = testUI.querySelectorAll('div');
-            const shapesDiv = divs[0];
-            window.SHAPES.forEach(s => {
-              const btn = document.createElement('button');
-              btn.textContent = s.name;
-              btn.style.margin = '0 4px';
-              btn.addEventListener('click', () => {
-                const shape = s.name.toLowerCase();
-                const cmd = JSON.stringify({command:'set_shape', args:[shape]});
-                console.log('[UI Test] Sending', cmd);
-                if (window.wsUI) window.wsUI.send(cmd);
-                console.log('[UI Test] Local commandSetShape', shape);
-                try { commandSetShape(shape); } catch(e) { console.error('Local set_shape error', e); }
-              });
-              shapesDiv.appendChild(btn);
-            });
-            const colorsDiv = divs[1];
-            Object.keys(window.COLOR_SCHEMES).forEach(name => {
-              const btn = document.createElement('button');
-              btn.textContent = name;
-              btn.style.margin = '0 4px';
-              btn.addEventListener('click', () => {
-                const cmd = JSON.stringify({command:'set_color', args:[name]});
-                console.log('[UI Test] Sending', cmd);
-                if (window.wsUI) window.wsUI.send(cmd);
-                console.log('[UI Test] Local commandSetColor', name);
-                try { commandSetColor(name); } catch(e) { console.error('Local set_color error', e); }
-              });
-              colorsDiv.appendChild(btn);
-            });
-          }
-          document.addEventListener('DOMContentLoaded', buildTestUI);
-          window.addEventListener('load', buildTestUI);
-          setTimeout(buildTestUI, 500);
-        })();
-      </script>
     </script>
 
     <script type="module">
@@ -825,47 +765,6 @@
         }
 
         init();
-        // Expose core objects and functions globally for non-module scripts
-        window.SHAPES = SHAPES;
-        window.COLOR_SCHEMES = COLOR_SCHEMES;
-        window.commandSetShape = commandSetShape;
-        window.commandSetColor = commandSetColor;
-        window.commandTriggerMorph = commandTriggerMorph;
-        // Build Test UI buttons after initial setup
-        (function buildTestUI(){
-            const testUI = document.getElementById('test-ui');
-            if (!testUI) return;
-            const divs = testUI.querySelectorAll('div');
-            const shapesDiv = divs[0];
-            const colorsDiv = divs[1];
-            window.SHAPES.forEach(s => {
-                const btn = document.createElement('button');
-                btn.textContent = s.name;
-                btn.style.margin = '0 4px';
-                btn.onclick = () => {
-                    const shape = s.name.toLowerCase();
-                    commandSetShape(shape);
-                    console.log('[UI Test] Local commandSetShape', shape);
-                    if (window.wsUI) window.wsUI.send(JSON.stringify({command:'set_shape', args:[shape]}));
-                };
-                shapesDiv.appendChild(btn);
-            });
-            Object.keys(window.COLOR_SCHEMES).forEach(name => {
-                const btn = document.createElement('button');
-                btn.textContent = name;
-                btn.style.margin = '0 4px';
-                btn.onclick = () => {
-                    commandSetColor(name);
-                    console.log('[UI Test] Local commandSetColor', name);
-                    if (window.wsUI) window.wsUI.send(JSON.stringify({command:'set_color', args:[name]}));
-                };
-                colorsDiv.appendChild(btn);
-            });
-        })();
-            // Expose command functions to global scope for WebSocket handler
-            window.commandSetShape = commandSetShape;
-            window.commandSetColor = commandSetColor;
-            window.commandTriggerMorph = commandTriggerMorph;
 
     </script>
     <!-- WebSocket UI command handler -->
