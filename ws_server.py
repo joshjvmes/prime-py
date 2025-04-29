@@ -40,8 +40,17 @@ async def websocket_endpoint(ws: WebSocket):
             args = msg.get("args", [])
             if hasattr(field, cmd):
                 try:
-                    getattr(field, cmd)(*args)
-                    # Acknowledge command
+                    # Execute command
+                    func = getattr(field, cmd)
+                    func(*args)
+                    # If setting shape, auto-trigger morph
+                    if cmd == 'set_shape':
+                        # use default duration
+                        try:
+                            field.trigger_morph()
+                        except Exception:
+                            pass
+                    # Acknowledge
                     await ws.send_text(json.dumps({"ack": cmd, "args": args}))
                 except Exception as e:
                     await ws.send_text(json.dumps({"error": str(e)}))
